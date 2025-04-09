@@ -1,0 +1,8 @@
+{
+    "video_path": "temp_raw_video.y4m",
+    "width": 1920,
+    "height": 1080,
+    "fps": 25,
+    "pixfmt": "YU12",
+    "y4m": true
+  }

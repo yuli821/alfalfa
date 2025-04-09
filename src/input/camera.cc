@@ -75,6 +75,7 @@ Camera::Camera( const uint16_t width, const uint16_t height,
   if ( format.fmt.pix.pixelformat != pixel_format or
        format.fmt.pix.width != width_ or
        format.fmt.pix.height != height_ ) {
+        printf("%d  %d  %d  |  %d  %d  %d\n", pixel_format, width, height, format.fmt.pix.pixelformat, format.fmt.pix.width, format.fmt.pix.height);
     throw runtime_error( "couldn't configure the camera with the given format" );
   }
 

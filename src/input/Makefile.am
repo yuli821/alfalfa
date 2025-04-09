@@ -7,4 +7,5 @@ libalfalfainput_a_SOURCES = frame_input.hh \
 	ivf_reader.hh ivf_reader.cc \
 	yuv4mpeg.hh yuv4mpeg.cc \
 	camera.hh camera.cc \
-	jpeg.hh jpeg.cc
+	jpeg.hh jpeg.cc \
+	raw_video_reader.hh raw_video_reader.cc

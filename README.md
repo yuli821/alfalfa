@@ -1,3 +1,6 @@
+Make Salsify support pre-recorded video without the fake camera. Also adding the way to log important metrics for research purpose.
+
+
 # Alfalfa [![Build Status](https://travis-ci.org/excamera/alfalfa.svg?branch=master)](https://travis-ci.org/excamera/alfalfa)
 
 Alfalfa is a [VP8](https://en.wikipedia.org/wiki/VP8) encoder and

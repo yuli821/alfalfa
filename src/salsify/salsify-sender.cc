@@ -53,6 +53,7 @@
 #include "camera.hh"
 #include "pacer.hh"
 #include "procinfo.hh"
+#include "raw_video_reader.hh"
 
 using namespace std;
 using namespace std::chrono;
@@ -281,10 +282,11 @@ int main( int argc, char *argv[] )
   }
 
   /* camera device */
-  Camera camera { 1280, 720, PIXEL_FORMAT_STRS.at( pixel_format ), camera_device };
+  // Camera camera { 1280, 720, PIXEL_FORMAT_STRS.at( pixel_format ), camera_device };
+  RawVideoReader reader {"./src/input/video_config.json"};
 
   /* construct the encoder */
-  Encoder base_encoder { camera.display_width(), camera.display_height(),
+  Encoder base_encoder { reader.display_width(), reader.display_height(),
                          false /* two-pass */, REALTIME_QUALITY };
 
   const uint32_t initial_state = base_encoder.minihash();
@@ -343,7 +345,7 @@ int main( int argc, char *argv[] )
     [&]() -> Result {
       encode_start_pipe.second.read();
 
-      last_raster = camera.get_next_frame();
+      last_raster = reader.get_next_frame();
 
       if ( not last_raster.initialized() ) {
         return { ResultType::Exit, EXIT_FAILURE };
