@@ -1,5 +1,7 @@
 Make Salsify support pre-recorded video without the fake camera. Also adding the way to log important metrics for research purpose.
 
+salsify-sender --device [config file path] --pixfmt YU12 [IP address] [PORT] 1337
+
 
 # Alfalfa [![Build Status](https://travis-ci.org/excamera/alfalfa.svg?branch=master)](https://travis-ci.org/excamera/alfalfa)
 

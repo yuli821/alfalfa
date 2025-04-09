@@ -283,10 +283,13 @@ int main( int argc, char *argv[] )
 
   /* camera device */
   // Camera camera { 1280, 720, PIXEL_FORMAT_STRS.at( pixel_format ), camera_device };
-  RawVideoReader reader {"./src/input/video_config.json"};
+  // RawVideoReader reader {"./src/input/video_config.json"};
+  // reader.start();
+  auto reader = std::make_unique<RawVideoReader>(camera_device);
+  reader->start();
 
   /* construct the encoder */
-  Encoder base_encoder { reader.display_width(), reader.display_height(),
+  Encoder base_encoder { reader->display_width(), reader->display_height(),
                          false /* two-pass */, REALTIME_QUALITY };
 
   const uint32_t initial_state = base_encoder.minihash();
@@ -345,7 +348,7 @@ int main( int argc, char *argv[] )
     [&]() -> Result {
       encode_start_pipe.second.read();
 
-      last_raster = reader.get_next_frame();
+      last_raster = reader->get_next_frame();
 
       if ( not last_raster.initialized() ) {
         return { ResultType::Exit, EXIT_FAILURE };
