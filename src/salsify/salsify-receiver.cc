@@ -129,7 +129,7 @@ void enqueue_frame( FramePlayer & player, const Chunk & frame )
   auto end_time = std::chrono::steady_clock::now();
   if (end_time - start_time > std::chrono::seconds(1)) {
     // Print the number of frames decoded per second
-    std::cout << "ReceiverDecodedFrames " << decoded_frames << " frames in "
+    std::cout << "ReceiverDecodedFrames " << receiver_decoded_frames << " frames in "
               << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
               << " seconds." << std::endl;
     decoded_frames = 0;
