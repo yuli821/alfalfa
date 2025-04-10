@@ -267,7 +267,7 @@ int main( int argc, char *argv[] )
         current_state = player.current_decoder().minihash();
       }
 
-      now_new = std::chrono::steady_clock::now();
+      auto now_new = std::chrono::steady_clock::now();
       auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
           now_new.time_since_epoch()
       ).count();
