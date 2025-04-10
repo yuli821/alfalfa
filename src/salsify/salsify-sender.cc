@@ -561,6 +561,8 @@ int main( int argc, char *argv[] )
         frame_size = target_size( avg_delay, last_acked, cumulative_fpf.back() );
       }
 
+      std::cout << "Frame Size: " << frame_size << " bytes" << std::endl;
+
       size_t best_output_index = numeric_limits<size_t>::max();
       size_t best_size_diff = numeric_limits<size_t>::max();
 
