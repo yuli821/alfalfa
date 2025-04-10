@@ -4,8 +4,7 @@
 #include <cstdint>
 
 using TimePoint = std::chrono::time_point<std::chrono::steady_clock>;
-std::pair<TimePoint, TimePoint> time_range;
-
+using time_range = std::pair<TimePoint, TimePoint>;
 
 extern std::map<uint32_t, time_range> frame_timestamps;
 
