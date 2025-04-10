@@ -95,24 +95,24 @@ uint16_t ezrand()
   return ud( rd );
 }
 
-queue<RasterHandle> display_queue;
-mutex mtx;
-condition_variable cv;
+// queue<RasterHandle> display_queue;
+// mutex mtx;
+// condition_variable cv;
 
-void display_task( const VP8Raster & example_raster, bool fullscreen )
-{
-  VideoDisplay display { example_raster, fullscreen };
+// void display_task( const VP8Raster & example_raster, bool fullscreen )
+// {
+//   VideoDisplay display { example_raster, fullscreen };
 
-  while( true ) {
-    unique_lock<mutex> lock( mtx );
-    cv.wait( lock, []() { return not display_queue.empty(); } );
+//   while( true ) {
+//     unique_lock<mutex> lock( mtx );
+//     cv.wait( lock, []() { return not display_queue.empty(); } );
 
-    while( not display_queue.empty() ) {
-      display.draw( display_queue.front() );
-      display_queue.pop();
-    }
-  }
-}
+//     while( not display_queue.empty() ) {
+//       display.draw( display_queue.front() );
+//       display_queue.pop();
+//     }
+//   }
+// }
 
 void enqueue_frame( FramePlayer & player, const Chunk & frame )
 {
@@ -122,16 +122,17 @@ void enqueue_frame( FramePlayer & player, const Chunk & frame )
 
   const Optional<RasterHandle> raster = player.decode( frame );
 
-  async( launch::async,
-    [&raster]()
-    {
-      if ( raster.initialized() ) {
-        lock_guard<mutex> lock( mtx );
-        display_queue.push( raster.get() );
-        cv.notify_all();
-      }
-    }
-  );
+  // async( launch::async,
+  //   [&raster]()
+  //   {
+      // if ( raster.initialized() ) {
+        // lock_guard<mutex> lock( mtx );
+        // display_queue.push( raster.get() );
+        // cv.notify_all();
+        // std::cerr << "[receiver] decoded frame " << std::endl;
+      // }
+  //   }
+  // );
 }
 
 int main( int argc, char *argv[] )
@@ -142,11 +143,12 @@ int main( int argc, char *argv[] )
   }
 
   /* fullscreen player */
-  bool fullscreen = false;
+  // bool fullscreen = false;
   bool verbose = false;
 
   const option command_line_options[] = {
-    { "fullscreen", no_argument, nullptr, 'f' },
+    // { "fullscreen", no_argument, nullptr, 'f' },
+    { "config",    no_argument, nullptr, 'c' },
     { "verbose",    no_argument, nullptr, 'v' },
     { 0, 0, 0, 0 }
   };
@@ -159,10 +161,9 @@ int main( int argc, char *argv[] )
     }
 
     switch ( opt ) {
-    case 'f':
-      fullscreen = true;
-      break;
-
+    // case 'f':
+    //   // fullscreen = true;
+    //   break;
     case 'v':
       verbose = true;
       break;
@@ -192,7 +193,7 @@ int main( int argc, char *argv[] )
   player.set_error_concealment( true );
 
   /* construct display thread */
-  thread( [&player, fullscreen]() { display_task( player.example_raster(), fullscreen ); } ).detach();
+  // thread( [&player, fullscreen]() { display_task( player.example_raster(), fullscreen ); } ).detach();
 
   /* frame no => FragmentedFrame; used when receiving packets out of order */
   unordered_map<size_t, FragmentedFrame> fragmented_frames;
