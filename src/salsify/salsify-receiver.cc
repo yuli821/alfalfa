@@ -248,13 +248,7 @@ int main( int argc, char *argv[] )
 
         // frame_timestamps[packet.frame_no()].second = std::chrono::steady_clock::now();
 
-        auto now = std::chrono::steady_clock::now();
-        auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            now.time_since_epoch()
-        ).count();
-
-        receiver_log_file << packet.frame_no() << " " << ns_since_epoch << "\n";
-        receiver_log_file.flush();
+        
   
         /* current frame is not finished yet, but we just received a packet
            for the next frame, so here we just encode the partial frame and
@@ -272,6 +266,14 @@ int main( int argc, char *argv[] )
         next_frame_no = packet.frame_no();
         current_state = player.current_decoder().minihash();
       }
+
+      auto now = std::chrono::steady_clock::now();
+      auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
+          now.time_since_epoch()
+      ).count();
+
+      receiver_log_file << packet.frame_no() << " " << ns_since_epoch << "\n";
+      receiver_log_file.flush();
 
       /* add to current frame */
       if ( fragmented_frames.count( packet.frame_no() ) ) {
