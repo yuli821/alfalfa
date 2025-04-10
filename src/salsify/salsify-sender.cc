@@ -568,6 +568,10 @@ int main( int argc, char *argv[] )
           good_outputs.push_back( move( out_future.get() ) );
         }
       }
+      
+      static size_t encoded_frame_count = 0;
+      encoded_frame_count++;
+      cerr << "Encoded frame count: " << encoded_frame_count << endl;
 
       if ( operation_mode == OperationMode::Conventional ) {
         best_output_index = 0; /* always send the frame */
