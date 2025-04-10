@@ -33,6 +33,7 @@
 
 #include <sstream>
 #include <boost/functional/hash.hpp>
+#include <chrono>
 
 using namespace std;
 
@@ -136,7 +137,23 @@ pair<bool, RasterHandle> Decoder::get_frame_output( const Chunk & compressed_fra
 
 Optional<RasterHandle> Decoder::parse_and_decode_frame( const Chunk & compressed_frame )
 {
+  //set up static vars to hold the values
+  static uint32_t decoded_frames = 0;
+  static auto start_time = std::chrono::steady_clock::now();
+
   pair<bool, RasterHandle> output = get_frame_output( compressed_frame );
+
+  //increment decoded_frames count
+  decoded_frames++;
+  auto end_time = std::chrono::steady_clock::now();
+  if (end_time - start_time > std::chrono::seconds(1)) {
+    // Print the number of frames decoded per second
+    std::cout << "Decoded " << decoded_frames << " frames in "
+              << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
+              << " seconds." << std::endl;
+    decoded_frames = 0;
+    start_time = end_time;
+  }
   return make_optional( output.first, output.second );
 }
 
