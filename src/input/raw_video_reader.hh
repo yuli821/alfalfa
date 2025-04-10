@@ -16,6 +16,7 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <boost/lockfree/spsc_queue.hpp>
 
 class RawVideoReader {
 public:
@@ -58,8 +59,7 @@ private:
   std::thread reader_thread_;
   std::atomic<bool> running_{false};
 
-  std::queue<RasterHandle> frame_queue_;
-  std::mutex queue_mutex_;
-  std::condition_variable queue_cv_;
-  const size_t max_queue_size_ = 8;
+  // std::queue<RasterHandle> frame_queue_;
+  static constexpr size_t max_queue_size_ = 8;
+  boost::lockfree::spsc_queue<Optional<RasterHandle>, boost::lockfree::capacity<8>> frame_queue_;
 };
