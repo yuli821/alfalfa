@@ -592,7 +592,7 @@ int main( int argc, char *argv[] )
       ).count();
 
       sender_log_file << frame_no << " " << ns_since_epoch << "\n";
-
+      sender_log_file.flush();
 
       // cerr << "Encoded frame count: " << encoded_frame_count << endl;
 

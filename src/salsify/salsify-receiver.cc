@@ -254,6 +254,7 @@ int main( int argc, char *argv[] )
         ).count();
 
         receiver_log_file << packet.frame_no() << " " << ns_since_epoch << "\n";
+        receiver_log_file.flush();
   
         /* current frame is not finished yet, but we just received a packet
            for the next frame, so here we just encode the partial frame and
