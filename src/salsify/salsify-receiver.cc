@@ -267,9 +267,9 @@ int main( int argc, char *argv[] )
         current_state = player.current_decoder().minihash();
       }
 
-      auto now = std::chrono::steady_clock::now();
+      now_new = std::chrono::steady_clock::now();
       auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
-          now.time_since_epoch()
+          now_new.time_since_epoch()
       ).count();
 
       receiver_log_file << packet.frame_no() << " " << ns_since_epoch << "\n";
