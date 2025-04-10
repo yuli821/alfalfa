@@ -149,8 +149,8 @@ vector<uint8_t> Encoder::write_frame( const FrameType & frame,
 {
 
   //set up static vars to hold the values
-  static uint32_t encoded_frames = 0;
-  static auto start_time = std::chrono::steady_clock::now();
+  // static uint32_t encoded_frames = 0;
+  // static auto start_time = std::chrono::steady_clock::now();
 
   // update the state
   update_decoder_state( frame );
