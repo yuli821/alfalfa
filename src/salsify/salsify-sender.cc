@@ -54,12 +54,13 @@
 #include "pacer.hh"
 #include "procinfo.hh"
 #include "raw_video_reader.hh"
-#include "frame_logger.hh"
 
 using namespace std;
 using namespace std::chrono;
 using namespace PollerShortNames;
-std::map<uint32_t, time_range> frame_timestamps;
+// std::map<uint32_t, time_range> frame_timestamps;
+
+std::ofstream sender_log_file("sender_log.txt", std::ios::app);
 
 class AverageEncodingTime
 {
@@ -585,7 +586,13 @@ int main( int argc, char *argv[] )
         start_time = end_time;
       }
 
-      frame_timestamps[frame_no].first = std::chrono::steady_clock::now();
+      auto now = std::chrono::steady_clock::now();
+      auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
+          now.time_since_epoch()
+      ).count();
+
+      sender_log_file << frame_no << " " << ns_since_epoch << "\n";
+
 
       // cerr << "Encoded frame count: " << encoded_frame_count << endl;
 

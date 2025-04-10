@@ -47,11 +47,13 @@
 #include "display.hh"
 #include "paranoid.hh"
 #include "procinfo.hh"
-#include "frame_logger.hh"
 
 using namespace std;
 using namespace std::chrono;
 using namespace PollerShortNames;
+// std::map<uint32_t, time_range> frame_timestamps;
+
+std::ofstream receiver_log_file("receiver_log.txt", std::ios::app);
 
 class AverageInterPacketDelay
 {
@@ -244,6 +246,13 @@ int main( int argc, char *argv[] )
       else if ( packet.frame_no() > next_frame_no ) {
 
         frame_timestamps[packet.frame_no()].second = std::chrono::steady_clock::now();
+
+        auto now = std::chrono::steady_clock::now();
+        auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            now.time_since_epoch()
+        ).count();
+
+        receiver_log_file << packet.frame_no() << " " << ns_since_epoch << "\n";
   
         /* current frame is not finished yet, but we just received a packet
            for the next frame, so here we just encode the partial frame and
