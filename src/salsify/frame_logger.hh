@@ -10,7 +10,11 @@ extern std::map<uint32_t, time_range> frame_timestamps;
 
 void dump_frame_timings() {
     std::cout << "Frame timings (ID: duration in ms):\n";
-    for (const auto& [frame_id, times] : frame_timestamps) {
+
+    for (const auto& entry : frame_timestamps) {
+        uint32_t frame_id = entry.first;
+        auto times = entry.second;
+    
         auto start = times.first;
         auto end = times.second;
 
