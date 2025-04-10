@@ -120,7 +120,22 @@ void enqueue_frame( FramePlayer & player, const Chunk & frame )
     return;
   }
 
+  //set up static vars to hold the values
+  static uint32_t receiver_decoded_frames = 0;
+  static auto start_time = std::chrono::steady_clock::now();
+
   const Optional<RasterHandle> raster = player.decode( frame );
+  receiver_decoded_frames++;
+  auto end_time = std::chrono::steady_clock::now();
+  if (end_time - start_time > std::chrono::seconds(1)) {
+    // Print the number of frames decoded per second
+    std::cout << "ReceiverDecodedFrames " << decoded_frames << " frames in "
+              << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
+              << " seconds." << std::endl;
+    decoded_frames = 0;
+    start_time = end_time;
+  }
+
 
   // async( launch::async,
   //   [&raster]()
