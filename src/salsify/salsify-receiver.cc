@@ -243,7 +243,7 @@ int main( int argc, char *argv[] )
       }
       else if ( packet.frame_no() > next_frame_no ) {
 
-        frame_timestamps[packet.frame_no].second = std::chrono::steady_clock::now();
+        frame_timestamps[packet.frame_no()].second = std::chrono::steady_clock::now();
   
         /* current frame is not finished yet, but we just received a packet
            for the next frame, so here we just encode the partial frame and
@@ -358,6 +358,6 @@ int main( int argc, char *argv[] )
     }
   }
   dump_frame_timings();
-  
+
   return EXIT_SUCCESS;
 }
