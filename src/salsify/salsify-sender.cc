@@ -60,7 +60,7 @@ using namespace std::chrono;
 using namespace PollerShortNames;
 // std::map<uint32_t, time_range> frame_timestamps;
 
-std::ofstream sender_log_file("sender_log.txt", std::ios::app);
+
 
 class AverageEncodingTime
 {
@@ -201,7 +201,7 @@ int main( int argc, char *argv[] )
   if ( argc < 1 ) { /* for sticklers */
     abort();
   }
-
+  std::ofstream sender_log_file("sender_log.txt", std::ios::app);
   /* camera settings */
   string camera_device = "/dev/video0";
   string pixel_format = "NV12";

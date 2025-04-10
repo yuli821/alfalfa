@@ -53,7 +53,7 @@ using namespace std::chrono;
 using namespace PollerShortNames;
 // std::map<uint32_t, time_range> frame_timestamps;
 
-std::ofstream receiver_log_file("receiver_log.txt", std::ios::app);
+
 
 class AverageInterPacketDelay
 {
@@ -160,6 +160,7 @@ int main( int argc, char *argv[] )
     abort();
   }
 
+  std::ofstream receiver_log_file("receiver_log.txt", std::ios::app);
   /* fullscreen player */
   // bool fullscreen = false;
   bool verbose = false;
