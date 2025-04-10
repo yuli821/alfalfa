@@ -60,6 +60,6 @@ private:
   std::atomic<bool> running_{false};
 
   // std::queue<RasterHandle> frame_queue_;
-  static constexpr size_t max_queue_size_ = 8;
+  static constexpr size_t max_queue_size_ = 1;
   boost::lockfree::spsc_queue<Optional<RasterHandle>, boost::lockfree::capacity<8>> frame_queue_;
 };

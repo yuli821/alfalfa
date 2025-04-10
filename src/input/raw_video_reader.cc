@@ -83,6 +83,8 @@ void RawVideoReader::load_config(const std::string & config_path) {
   uv_size_ = y_size_ / 4;
   frame_delay_us_ = 1000000 / fps;
   frame_delay_ = std::chrono::microseconds(frame_delay_us_);
+  printf("fps: %d\n", fps);
+  printf("frame_delay in microseconds: %d\n", frame_delay_us_);
 }
 
 void RawVideoReader::start() {
@@ -99,7 +101,7 @@ void RawVideoReader::stop() {
 }
 
 void RawVideoReader::frame_reader_loop() {
-  auto next_time = Clock::now();
+  // auto next_time = Clock::now();
   while (true) {
     // std::unique_lock<std::mutex> lock(queue_mutex_);
     // queue_cv_.wait(lock, [this]() {
@@ -113,12 +115,16 @@ void RawVideoReader::frame_reader_loop() {
       }
       frame_queue_.push(std::move(frame.get()));
     }
-    next_time += frame_delay_;
+    // next_time += frame_delay_;
     // frame_queue_.push(std::move(frame.get()));
     // lock.unlock();
     // queue_cv_.notify_all();
-
-    std::this_thread::sleep_until(next_time);
+    const auto start = std::chrono::high_resolution_clock::now();
+    std::this_thread::sleep_for(frame_delay_);
+    const auto end = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<double, std::milli> elapsed = end - start;
+ 
+    // printf("Watied: %f\n", elapsed.count());
   }
 }
 
