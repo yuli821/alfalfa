@@ -366,7 +366,6 @@ int main( int argc, char *argv[] )
       return poll_result.exit_status;
     }
   }
-  dump_frame_timings();
 
   return EXIT_SUCCESS;
 }
