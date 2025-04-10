@@ -181,7 +181,7 @@ vector<uint8_t> Encoder::write_frame( const FrameType & frame,
     encoded_frames = 0;
     start_time = end_time;
   }
-  return frame.serialize( prob_tables );
+  return serialized_frame;
 }
 
 template<class FrameType>
