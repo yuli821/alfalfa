@@ -59,6 +59,7 @@
 using namespace std;
 using namespace std::chrono;
 using namespace PollerShortNames;
+std::map<uint32_t, time_range> frame_timestamps;
 
 class AverageEncodingTime
 {
@@ -585,7 +586,7 @@ int main( int argc, char *argv[] )
       }
 
       frame_timestamps[frame_no].first = std::chrono::steady_clock::now();
-      
+
       // cerr << "Encoded frame count: " << encoded_frame_count << endl;
 
       if ( operation_mode == OperationMode::Conventional ) {
