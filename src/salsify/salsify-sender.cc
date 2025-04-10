@@ -54,6 +54,7 @@
 #include "pacer.hh"
 #include "procinfo.hh"
 #include "raw_video_reader.hh"
+#include "frame_logger.hh"
 
 using namespace std;
 using namespace std::chrono;
@@ -570,8 +571,22 @@ int main( int argc, char *argv[] )
       }
       
       static size_t encoded_frame_count = 0;
+      static auto start_time = std::chrono::steady_clock::now();
+
       encoded_frame_count++;
-      cerr << "Encoded frame count: " << encoded_frame_count << endl;
+      auto end_time = std::chrono::steady_clock::now();
+      if (end_time - start_time > std::chrono::seconds(1)) {
+        // Print the number of frames encoded per second
+        std::cout << "Encoded " << encoded_frame_count << " frames in "
+                  << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
+                  << " seconds." << std::endl;
+        encoded_frame_count = 0;
+        start_time = end_time;
+      }
+
+      frame_timestamps[frame_no].first = std::chrono::steady_clock::now();
+      
+      // cerr << "Encoded frame count: " << encoded_frame_count << endl;
 
       if ( operation_mode == OperationMode::Conventional ) {
         best_output_index = 0; /* always send the frame */

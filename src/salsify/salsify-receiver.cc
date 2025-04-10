@@ -47,6 +47,7 @@
 #include "display.hh"
 #include "paranoid.hh"
 #include "procinfo.hh"
+#include "frame_logger.hh"
 
 using namespace std;
 using namespace std::chrono;
@@ -235,12 +236,15 @@ int main( int argc, char *argv[] )
 
       /* parse into Packet */
       const Packet packet { new_fragment.payload };
-
+      
       if ( packet.frame_no() < next_frame_no ) {
         /* we're not interested in this anymore */
         return ResultType::Continue;
       }
       else if ( packet.frame_no() > next_frame_no ) {
+
+        frame_timestamps[packet.frame_no].second = std::chrono::steady_clock::now();
+  
         /* current frame is not finished yet, but we just received a packet
            for the next frame, so here we just encode the partial frame and
            display it and move on to the next frame */
@@ -353,6 +357,7 @@ int main( int argc, char *argv[] )
       return poll_result.exit_status;
     }
   }
-
+  dump_frame_timings();
+  
   return EXIT_SUCCESS;
 }
