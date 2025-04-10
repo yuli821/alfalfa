@@ -245,7 +245,7 @@ int main( int argc, char *argv[] )
       }
       else if ( packet.frame_no() > next_frame_no ) {
 
-        frame_timestamps[packet.frame_no()].second = std::chrono::steady_clock::now();
+        // frame_timestamps[packet.frame_no()].second = std::chrono::steady_clock::now();
 
         auto now = std::chrono::steady_clock::now();
         auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
