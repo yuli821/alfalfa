@@ -14,6 +14,7 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <boost/lockfree/spsc_queue.hpp>
 
 RawVideoReader::RawVideoReader(const std::string & config_path)
   : pixel_format_(PixelFormat::YUV420),
@@ -28,9 +29,7 @@ RawVideoReader::RawVideoReader(const std::string & config_path)
   last_frame_time_(Clock::now()),
   reader_thread_(),      // match order
   running_(false),       // match order
-  frame_queue_(),
-  queue_mutex_(),
-  queue_cv_()
+  frame_queue_()
 {
   load_config(config_path);
 }
@@ -93,46 +92,49 @@ void RawVideoReader::start() {
 
 void RawVideoReader::stop() {
   // running_ = false;
-  queue_cv_.notify_all();
+  // queue_cv_.notify_all();
   if (reader_thread_.joinable()) {
     reader_thread_.join();
   }
 }
 
 void RawVideoReader::frame_reader_loop() {
+  auto next_time = Clock::now();
   while (true) {
-    std::unique_lock<std::mutex> lock(queue_mutex_);
-    queue_cv_.wait(lock, [this]() {
-      return frame_queue_.size() < max_queue_size_;
-    });
-
-    auto frame = read_and_decode_one();
-    if (!frame.initialized()) {
-      running_ = false;
-      break;
+    // std::unique_lock<std::mutex> lock(queue_mutex_);
+    // queue_cv_.wait(lock, [this]() {
+      // return frame_queue_.size() < max_queue_size_;
+    // });
+    if (frame_queue_.write_available()) {
+      auto frame = read_and_decode_one();
+      if (!frame.initialized()) {
+        running_ = false;
+        break;
+      }
+      frame_queue_.push(std::move(frame.get()));
     }
+    next_time += frame_delay_;
+    // frame_queue_.push(std::move(frame.get()));
+    // lock.unlock();
+    // queue_cv_.notify_all();
 
-    frame_queue_.push(std::move(frame.get()));
-    lock.unlock();
-    queue_cv_.notify_all();
-
-    std::this_thread::sleep_for(frame_delay_);
+    std::this_thread::sleep_until(next_time);
   }
 }
 
 Optional<RasterHandle> RawVideoReader::get_next_frame() {
-  std::unique_lock<std::mutex> lock(queue_mutex_);
-  queue_cv_.wait(lock, [this]() {
-    return !frame_queue_.empty() || !running_;
-  });
+  // std::unique_lock<std::mutex> lock(queue_mutex_);
+  // queue_cv_.wait(lock, [this]() {
+  //   return !frame_queue_.empty() || !running_;
+  // });
   if (!running_) return {};
   if (frame_queue_.empty()) return {};
 
-  RasterHandle frame = std::move(frame_queue_.front());
-  frame_queue_.pop();
-  lock.unlock();
-  queue_cv_.notify_all();
-  return frame;
+  Optional<RasterHandle> frame;
+  if (frame_queue_.pop(frame)) {
+    return frame;
+  }
+  return {};
 }
 
 Optional<RasterHandle> RawVideoReader::read_and_decode_one() {
