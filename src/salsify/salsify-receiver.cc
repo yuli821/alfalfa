@@ -287,13 +287,7 @@ int main( int argc, char *argv[] )
       if ( fragmented_frames.count( next_frame_no ) > 0 and fragmented_frames.at( next_frame_no ).complete() ) {
         auto & fragment = fragmented_frames.at( next_frame_no );
 
-        auto now_new = std::chrono::steady_clock::now();
-        auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            now_new.time_since_epoch()
-        ).count();
-
-        receiver_log_file << next_frame_no << " " << ns_since_epoch << "\n";
-        receiver_log_file.flush();
+        
 
         uint32_t expected_source_state = fragment.source_state();
 
@@ -339,6 +333,15 @@ int main( int argc, char *argv[] )
         }
 
         fragmented_frames.erase( next_frame_no );
+
+        auto now_new = std::chrono::steady_clock::now();
+        auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            now_new.time_since_epoch()
+        ).count();
+
+        receiver_log_file << next_frame_no << " " << ns_since_epoch << "\n";
+        receiver_log_file.flush();
+        
         next_frame_no++;
       }
 
