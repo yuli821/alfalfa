@@ -2,7 +2,7 @@
     "video_path": "output_720p_20s.y4m",
     "width": 1280,
     "height": 720,
-    "fps": 60,
+    "fps": 25,
     "pixfmt": "YU12",
     "y4m": true
 }

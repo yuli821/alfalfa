@@ -561,8 +561,6 @@ int main( int argc, char *argv[] )
         frame_size = target_size( avg_delay, last_acked, cumulative_fpf.back() );
       }
 
-      std::cout << "Frame Size: " << frame_size << " bytes" << std::endl;
-
       size_t best_output_index = numeric_limits<size_t>::max();
       size_t best_size_diff = numeric_limits<size_t>::max();
 
@@ -573,30 +571,6 @@ int main( int argc, char *argv[] )
           good_outputs.push_back( move( out_future.get() ) );
         }
       }
-
-      static size_t encoded_frame_count = 0;
-      static auto start_time = std::chrono::steady_clock::now();
-
-      encoded_frame_count++;
-      auto end_time = std::chrono::steady_clock::now();
-      if (end_time - start_time > std::chrono::seconds(1)) {
-        // Print the number of frames encoded per second
-        std::cout << "Encoded " << encoded_frame_count << " frames in "
-                  << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
-                  << " seconds." << std::endl;
-        encoded_frame_count = 0;
-        start_time = end_time;
-      }
-
-      auto now = std::chrono::steady_clock::now();
-      auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
-          now.time_since_epoch()
-      ).count();
-
-      sender_log_file << frame_no << " " << ns_since_epoch << "\n";
-      sender_log_file.flush();
-
-      // cerr << "Encoded frame count: " << encoded_frame_count << endl;
 
       if ( operation_mode == OperationMode::Conventional ) {
         best_output_index = 0; /* always send the frame */
@@ -628,7 +602,32 @@ int main( int argc, char *argv[] )
           }
         }
       }
-      cerr << good_outputs[best_output_index].frame.size() << endl;
+      static size_t encoded_frame_count = 0;
+      static float frame_size_average = 0.0;
+      static auto start_time = std::chrono::steady_clock::now();
+
+      encoded_frame_count++;
+      frame_size_average += good_outputs[best_output_index].frame.size();
+      auto end_time = std::chrono::steady_clock::now();
+      if (end_time - start_time > std::chrono::seconds(1)) {
+        // Print the number of frames encoded per second
+        std::cout << "Encoded " << encoded_frame_count << " frames in "
+                  << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
+                  << " seconds." << std::endl;
+        std::cout << "Total frame size (bytes) per sec" << frame_size_average<< endl;
+        frame_size_average = 0.0;
+        encoded_frame_count = 0;
+        start_time = end_time;
+      }
+
+      auto now = std::chrono::steady_clock::now();
+      auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
+          now.time_since_epoch()
+      ).count();
+
+      sender_log_file << frame_no << " " << ns_since_epoch << "\n";
+      // sender_log_file.flush();
+
       auto output = move( good_outputs[ best_output_index ] );
 
       uint32_t target_minihash = output.encoder.minihash();
@@ -740,6 +739,7 @@ int main( int argc, char *argv[] )
     const auto poll_result = poller.poll( pacer.ms_until_due() );
     if ( poll_result.result == Poller::Result::Type::Exit ) {
       if ( poll_result.exit_status ) {
+        sender_log_file.flush();
         cerr << "Connection error." << endl;
       }
 
