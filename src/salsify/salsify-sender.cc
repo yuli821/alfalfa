@@ -568,7 +568,7 @@ int main( int argc, char *argv[] )
           good_outputs.push_back( move( out_future.get() ) );
         }
       }
-      
+
       static size_t encoded_frame_count = 0;
       encoded_frame_count++;
       cerr << "Encoded frame count: " << encoded_frame_count << endl;
@@ -603,7 +603,7 @@ int main( int argc, char *argv[] )
           }
         }
       }
-
+      cerr << good_outputs[best_output_index].frame.size() << endl;
       auto output = move( good_outputs[ best_output_index ] );
 
       uint32_t target_minihash = output.encoder.minihash();

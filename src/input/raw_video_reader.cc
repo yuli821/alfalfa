@@ -93,20 +93,14 @@ void RawVideoReader::start() {
 }
 
 void RawVideoReader::stop() {
-  // running_ = false;
-  // queue_cv_.notify_all();
   if (reader_thread_.joinable()) {
     reader_thread_.join();
   }
 }
 
 void RawVideoReader::frame_reader_loop() {
-  // auto next_time = Clock::now();
   while (true) {
-    // std::unique_lock<std::mutex> lock(queue_mutex_);
-    // queue_cv_.wait(lock, [this]() {
-      // return frame_queue_.size() < max_queue_size_;
-    // });
+    const auto start = std::chrono::high_resolution_clock::now();
     if (frame_queue_.write_available()) {
       auto frame = read_and_decode_one();
       if (!frame.initialized()) {
@@ -114,33 +108,22 @@ void RawVideoReader::frame_reader_loop() {
         break;
       }
       frame_queue_.push(std::move(frame.get()));
-    }
-    // next_time += frame_delay_;
-    // frame_queue_.push(std::move(frame.get()));
-    // lock.unlock();
-    // queue_cv_.notify_all();
-    const auto start = std::chrono::high_resolution_clock::now();
-    std::this_thread::sleep_for(frame_delay_);
+    } 
     const auto end = std::chrono::high_resolution_clock::now();
-    const std::chrono::duration<double, std::milli> elapsed = end - start;
- 
-    // printf("Watied: %f\n", elapsed.count());
+    const std::chrono::duration<double, std::micro> elapsed = end - start;
+    const std::chrono::duration<double, std::micro> sleep_time = frame_delay_ - elapsed;
+    if (sleep_time.count() > 0)
+      std::this_thread::sleep_for(sleep_time);
   }
 }
 
 Optional<RasterHandle> RawVideoReader::get_next_frame() {
-  // std::unique_lock<std::mutex> lock(queue_mutex_);
-  // queue_cv_.wait(lock, [this]() {
-  //   return !frame_queue_.empty() || !running_;
-  // });
-  if (!running_) return {};
-  if (frame_queue_.empty()) return {};
-
   Optional<RasterHandle> frame;
-  if (frame_queue_.pop(frame)) {
-    return frame;
+  while (!frame_queue_.pop(frame)) {
+    std::this_thread::sleep_for(std::chrono::nanoseconds(5));
+    if (!running_) return {};
   }
-  return {};
+  return frame;
 }
 
 Optional<RasterHandle> RawVideoReader::read_and_decode_one() {
