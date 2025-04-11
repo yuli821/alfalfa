@@ -162,7 +162,7 @@ int main( int argc, char *argv[] )
 
   std::ofstream receiver_log_file("receiver_log.txt", std::ios::out);
   std::ofstream bitrateps("Receiving_bitrate.txt", std::ios::out);
-  std::ofstream framerate("Receiving fps.txt", std::ios::out);
+  std::ofstream framerate("Receiving_fps.txt", std::ios::out);
   /* fullscreen player */
   // bool fullscreen = false;
   bool verbose = false;

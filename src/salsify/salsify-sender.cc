@@ -203,7 +203,7 @@ int main( int argc, char *argv[] )
   }
   std::ofstream sender_log_file("sender_log.txt", std::ios::out);
   std::ofstream bitrateps("Sending_bitrate.txt", std::ios::out);
-  std::ofstream framerate("Sending fps.txt", std::ios::out);
+  std::ofstream framerate("Sending_fps.txt", std::ios::out);
   /* camera settings */
   string camera_device = "/dev/video0";
   string pixel_format = "NV12";
