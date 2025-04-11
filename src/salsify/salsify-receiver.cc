@@ -135,6 +135,7 @@ void enqueue_frame( FramePlayer & player, const Chunk & frame , std::ofstream& f
     fs << "ReceiverDecodedFrames " << receiver_decoded_frames << " frames in "
               << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
               << " seconds." << "\n";
+    fs.flush();
     receiver_decoded_frames = 0;
     start_time = end_time;
   }
