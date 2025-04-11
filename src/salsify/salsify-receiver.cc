@@ -117,7 +117,7 @@ uint16_t ezrand()
 //   }
 // }
 
-void enqueue_frame( FramePlayer & player, const Chunk & frame )
+void enqueue_frame( FramePlayer & player, const Chunk & frame , std::ofstream& fs)
 {
   if ( frame.size() == 0 ) {
     return;
@@ -132,9 +132,9 @@ void enqueue_frame( FramePlayer & player, const Chunk & frame )
   auto end_time = std::chrono::steady_clock::now();
   if (end_time - start_time > std::chrono::seconds(1)) {
     // Print the number of frames decoded per second
-    std::cout << "ReceiverDecodedFrames " << receiver_decoded_frames << " frames in "
+    fs << "ReceiverDecodedFrames " << receiver_decoded_frames << " frames in "
               << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
-              << " seconds." << std::endl;
+              << " seconds." << "\n";
     receiver_decoded_frames = 0;
     start_time = end_time;
   }
@@ -160,7 +160,9 @@ int main( int argc, char *argv[] )
     abort();
   }
 
-  std::ofstream receiver_log_file("receiver_log.txt", std::ios::app);
+  std::ofstream receiver_log_file("receiver_log.txt", std::ios::out);
+  std::ofstream bitrateps("Receiving_bitrate.txt", std::ios::out);
+  std::ofstream framerate("Receiving fps.txt", std::ios::out);
   /* fullscreen player */
   // bool fullscreen = false;
   bool verbose = false;
@@ -227,6 +229,8 @@ int main( int argc, char *argv[] )
   deque<uint32_t> complete_states;
   unordered_map<uint32_t, Decoder> decoders { { current_state, player.current_decoder() } };
 
+  static int bits_per_second = 0;
+  static auto start_time = std::chrono::steady_clock::now();
   /* memory usage logs */
   system_clock::time_point next_mem_usage_report = system_clock::now();
 
@@ -236,9 +240,18 @@ int main( int argc, char *argv[] )
     {
       /* wait for next UDP datagram */
       const auto new_fragment = socket.recv();
-
       /* parse into Packet */
       const Packet packet { new_fragment.payload };
+
+      bits_per_second += new_fragment.payload.size() * 8;
+      auto end_time = std::chrono::steady_clock::now();
+      if (end_time - start_time > std::chrono::seconds(1)) {
+        std::cout << "Bits per seoncd " << bits_per_second << endl;
+        start_time = end_time;
+        bits_per_second = 0;
+      }
+      bitrateps << bits_per_second << "\n";
+      bitrateps.flush();
       
       if ( packet.frame_no() < next_frame_no ) {
         /* we're not interested in this anymore */
@@ -259,7 +272,7 @@ int main( int argc, char *argv[] )
         for ( size_t i = next_frame_no; i < packet.frame_no(); i++ ) {
           if ( fragmented_frames.count( i ) == 0 ) continue;
 
-          enqueue_frame( player, fragmented_frames.at( i ).partial_frame() );
+          enqueue_frame( player, fragmented_frames.at( i ).partial_frame(), framerate );
           fragmented_frames.erase( i );
         }
 
@@ -320,7 +333,7 @@ int main( int argc, char *argv[] )
         }
 
         // here we apply the frame
-        enqueue_frame( player, fragment.frame() );
+        enqueue_frame( player, fragment.frame(), framerate );
 
         // state "after" applying the frame
         current_state = player.current_decoder().minihash();

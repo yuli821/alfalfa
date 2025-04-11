@@ -201,7 +201,9 @@ int main( int argc, char *argv[] )
   if ( argc < 1 ) { /* for sticklers */
     abort();
   }
-  std::ofstream sender_log_file("sender_log.txt", std::ios::app);
+  std::ofstream sender_log_file("sender_log.txt", std::ios::out);
+  std::ofstream bitrateps("Sending_bitrate.txt", std::ios::out);
+  std::ofstream framerate("Sending fps.txt", std::ios::out);
   /* camera settings */
   string camera_device = "/dev/video0";
   string pixel_format = "NV12";
@@ -611,10 +613,10 @@ int main( int argc, char *argv[] )
       auto end_time = std::chrono::steady_clock::now();
       if (end_time - start_time > std::chrono::seconds(1)) {
         // Print the number of frames encoded per second
-        std::cout << "Encoded " << encoded_frame_count << " frames in "
+        framerate << "Encoded " << encoded_frame_count << " frames in "
                   << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
-                  << " seconds." << std::endl;
-        std::cout << "Total frame size (bytes) per sec" << frame_size_average<< endl;
+                  << " seconds." << "\n";
+        bitrateps << frame_size_average*8 << "\n";
         frame_size_average = 0.0;
         encoded_frame_count = 0;
         start_time = end_time;
