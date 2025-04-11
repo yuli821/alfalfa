@@ -51,6 +51,9 @@
 using namespace std;
 using namespace std::chrono;
 using namespace PollerShortNames;
+// std::map<uint32_t, time_range> frame_timestamps;
+
+
 
 class AverageInterPacketDelay
 {
@@ -157,6 +160,7 @@ int main( int argc, char *argv[] )
     abort();
   }
 
+  std::ofstream receiver_log_file("receiver_log.txt", std::ios::app);
   /* fullscreen player */
   // bool fullscreen = false;
   bool verbose = false;
@@ -235,12 +239,17 @@ int main( int argc, char *argv[] )
 
       /* parse into Packet */
       const Packet packet { new_fragment.payload };
-
+      
       if ( packet.frame_no() < next_frame_no ) {
         /* we're not interested in this anymore */
         return ResultType::Continue;
       }
       else if ( packet.frame_no() > next_frame_no ) {
+
+        // frame_timestamps[packet.frame_no()].second = std::chrono::steady_clock::now();
+
+        
+  
         /* current frame is not finished yet, but we just received a packet
            for the next frame, so here we just encode the partial frame and
            display it and move on to the next frame */
@@ -277,6 +286,8 @@ int main( int argc, char *argv[] )
       /* is the next frame ready to be decoded? */
       if ( fragmented_frames.count( next_frame_no ) > 0 and fragmented_frames.at( next_frame_no ).complete() ) {
         auto & fragment = fragmented_frames.at( next_frame_no );
+
+        
 
         uint32_t expected_source_state = fragment.source_state();
 
@@ -322,6 +333,15 @@ int main( int argc, char *argv[] )
         }
 
         fragmented_frames.erase( next_frame_no );
+
+        auto now_new = std::chrono::steady_clock::now();
+        auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            now_new.time_since_epoch()
+        ).count();
+
+        receiver_log_file << next_frame_no << " " << ns_since_epoch << "\n";
+        receiver_log_file.flush();
+        
         next_frame_no++;
       }
 

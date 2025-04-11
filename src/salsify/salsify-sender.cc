@@ -58,6 +58,9 @@
 using namespace std;
 using namespace std::chrono;
 using namespace PollerShortNames;
+// std::map<uint32_t, time_range> frame_timestamps;
+
+
 
 class AverageEncodingTime
 {
@@ -198,7 +201,7 @@ int main( int argc, char *argv[] )
   if ( argc < 1 ) { /* for sticklers */
     abort();
   }
-
+  std::ofstream sender_log_file("sender_log.txt", std::ios::app);
   /* camera settings */
   string camera_device = "/dev/video0";
   string pixel_format = "NV12";
@@ -558,6 +561,8 @@ int main( int argc, char *argv[] )
         frame_size = target_size( avg_delay, last_acked, cumulative_fpf.back() );
       }
 
+      std::cout << "Frame Size: " << frame_size << " bytes" << std::endl;
+
       size_t best_output_index = numeric_limits<size_t>::max();
       size_t best_size_diff = numeric_limits<size_t>::max();
 
@@ -570,8 +575,28 @@ int main( int argc, char *argv[] )
       }
 
       static size_t encoded_frame_count = 0;
+      static auto start_time = std::chrono::steady_clock::now();
+
       encoded_frame_count++;
-      cerr << "Encoded frame count: " << encoded_frame_count << endl;
+      auto end_time = std::chrono::steady_clock::now();
+      if (end_time - start_time > std::chrono::seconds(1)) {
+        // Print the number of frames encoded per second
+        std::cout << "Encoded " << encoded_frame_count << " frames in "
+                  << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
+                  << " seconds." << std::endl;
+        encoded_frame_count = 0;
+        start_time = end_time;
+      }
+
+      auto now = std::chrono::steady_clock::now();
+      auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
+          now.time_since_epoch()
+      ).count();
+
+      sender_log_file << frame_no << " " << ns_since_epoch << "\n";
+      sender_log_file.flush();
+
+      // cerr << "Encoded frame count: " << encoded_frame_count << endl;
 
       if ( operation_mode == OperationMode::Conventional ) {
         best_output_index = 0; /* always send the frame */

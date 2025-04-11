@@ -149,8 +149,8 @@ vector<uint8_t> Encoder::write_frame( const FrameType & frame,
 {
 
   //set up static vars to hold the values
-  static uint32_t encoded_frames = 0;
-  static auto start_time = std::chrono::steady_clock::now();
+  // static uint32_t encoded_frames = 0;
+  // static auto start_time = std::chrono::steady_clock::now();
 
   // update the state
   update_decoder_state( frame );
@@ -171,16 +171,17 @@ vector<uint8_t> Encoder::write_frame( const FrameType & frame,
     last_y_ac_qi_.reset( frame.header().quant_indices.y_ac_qi );
   }
   vector<uint8_t> serialized_frame = frame.serialize( prob_tables );
-  encoded_frames++;
-  auto end_time = std::chrono::steady_clock::now();
-  if (end_time - start_time > std::chrono::seconds(1)) {
-    // Print the number of frames encoded per second
-    std::cout << "Encoded " << encoded_frames << " frames in "
-              << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
-              << " seconds." << std::endl;
-    encoded_frames = 0;
-    start_time = end_time;
-  }
+  
+  // encoded_frames++;
+  // auto end_time = std::chrono::steady_clock::now();
+  // if (end_time - start_time > std::chrono::seconds(1)) {
+  //   // Print the number of frames encoded per second
+  //   std::cout << "Encoded " << encoded_frames << " frames in "
+  //             << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
+  //             << " seconds." << std::endl;
+  //   encoded_frames = 0;
+  //   start_time = end_time;
+  // }
   return serialized_frame;
 }
 
