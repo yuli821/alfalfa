@@ -247,11 +247,11 @@ int main( int argc, char *argv[] )
       auto end_time = std::chrono::steady_clock::now();
       if (end_time - start_time > std::chrono::seconds(1)) {
         std::cout << "Bits per seoncd " << bits_per_second << endl;
+        bitrateps << bits_per_second << "\n";
+        bitrateps.flush();
         start_time = end_time;
         bits_per_second = 0;
       }
-      bitrateps << bits_per_second << "\n";
-      bitrateps.flush();
       
       if ( packet.frame_no() < next_frame_no ) {
         /* we're not interested in this anymore */
