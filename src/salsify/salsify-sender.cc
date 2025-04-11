@@ -364,6 +364,14 @@ int main( int argc, char *argv[] )
         return ResultType::Continue;
       }
 
+      auto now = std::chrono::steady_clock::now();
+      auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
+          now.time_since_epoch()
+      ).count();
+
+      sender_log_file << frame_no << " " << ns_since_epoch << "\n";
+      // sender_log_file.flush();
+
       /* let's cleanup the stored encoders based on the lastest ack */
       if ( receiver_last_acked_state.initialized() and
            receiver_last_acked_state.get() != initial_state and
@@ -622,12 +630,12 @@ int main( int argc, char *argv[] )
         start_time = end_time;
       }
 
-      auto now = std::chrono::steady_clock::now();
-      auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
-          now.time_since_epoch()
-      ).count();
+      // auto now = std::chrono::steady_clock::now();
+      // auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
+      //     now.time_since_epoch()
+      // ).count();
 
-      sender_log_file << frame_no << " " << ns_since_epoch << "\n";
+      // sender_log_file << frame_no << " " << ns_since_epoch << "\n";
       // sender_log_file.flush();
 
       auto output = move( good_outputs[ best_output_index ] );
