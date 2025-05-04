@@ -38,6 +38,10 @@
 #include <thread>
 #include <condition_variable>
 #include <future>
+#include <sstream>
+#include <fstream>
+#include <iomanip>
+#include <string>
 
 #include "socket.hh"
 #include "packet.hh"
@@ -97,27 +101,72 @@ uint16_t ezrand()
 
   return ud( rd );
 }
+queue<tuple<size_t, RasterHandle>> display_queue;
+mutex mtx;
+condition_variable cv;
 
-// queue<RasterHandle> display_queue;
-// mutex mtx;
-// condition_variable cv;
+void display_task()
+{
+  // VideoDisplay display { example_raster, fullscreen };
+  int frame_id = 0;
+  const int width = 1280;
+  const int height = 720;
+  long int y_size = width * height;
+  long int uv_size = y_size / 4;
+  ofstream ssim_file("output_ssim.txt", std::ios::out);
+  while( true ) {
+    unique_lock<mutex> lock( mtx );
+    cv.wait( lock, []() { return not display_queue.empty(); } );
 
-// void display_task( const VP8Raster & example_raster, bool fullscreen )
-// {
-//   VideoDisplay display { example_raster, fullscreen };
+    while( not display_queue.empty() ) {
+      // display.draw( display_queue.front() );
+      frame_id = get<0>(display_queue.front());
+      RasterHandle rasterhandle = get<1>(display_queue.front());
+      const BaseRaster& raster = rasterhandle.get();
+      // cout << "receiving: frame_id " << frame_id << endl;
+      
+      std::stringstream filename;
+      filename << "/mydata/input_frames/frame_" << std::setfill('0') << std::setw(4) << frame_id << ".yuv";
+      std::ifstream yuvFile(filename.str(), std::ios::binary);
+      if (!yuvFile.is_open()) {
+        std::cerr << "Failed to open YUV file: " << filename.str() << std::endl;
+        return;
+      }
 
-//   while( true ) {
-//     unique_lock<mutex> lock( mtx );
-//     cv.wait( lock, []() { return not display_queue.empty(); } );
+      MutableRasterHandle raster_handle{width, height};
+      auto & raster_in = raster_handle.get();
 
-//     while( not display_queue.empty() ) {
-//       display.draw( display_queue.front() );
-//       display_queue.pop();
-//     }
-//   }
-// }
+      yuvFile.read(reinterpret_cast<char*>(&raster_in.Y().at(0, 0)), y_size);
+      if (yuvFile.gcount() != y_size) {
+          std::cerr << "Failed to read Y plane\n";
+          return;
+      }
 
-void enqueue_frame( FramePlayer & player, const Chunk & frame , std::ofstream& fs)
+      // Read U plane
+      yuvFile.read(reinterpret_cast<char*>(&raster_in.U().at(0, 0)), uv_size);
+      if (yuvFile.gcount() != uv_size) {
+          std::cerr << "Failed to read U plane\n";
+          return;
+      }
+
+      // Read V plane
+      yuvFile.read(reinterpret_cast<char*>(&raster_in.V().at(0, 0)), uv_size);
+      if (yuvFile.gcount() != uv_size) {
+          std::cerr << "Failed to read V plane\n";
+          return;
+      }
+
+      yuvFile.close();
+      double ssim = raster_in.quality(raster);
+      ssim_file << frame_id << " " << ssim << endl;
+      ssim_file.flush();
+
+      display_queue.pop();
+    }
+  }
+}
+
+void enqueue_frame( FramePlayer & player, const Chunk & frame , size_t frame_id, std::ofstream& fs, std::ofstream& fs1) //fs: framerate, fs1: reciever log (e2de frame delay)
 {
   if ( frame.size() == 0 ) {
     return;
@@ -128,30 +177,32 @@ void enqueue_frame( FramePlayer & player, const Chunk & frame , std::ofstream& f
   static auto start_time = std::chrono::steady_clock::now();
 
   const Optional<RasterHandle> raster = player.decode( frame );
+  async( launch::async,
+    [&raster, frame_id]()
+    {
+      if ( raster.initialized() ) {
+        lock_guard<mutex> lock( mtx );
+        display_queue.push( {frame_id, raster.get()} );
+        cv.notify_all();
+      }
+    }
+  );
   receiver_decoded_frames++;
   auto end_time = std::chrono::steady_clock::now();
+  auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
+      end_time.time_since_epoch()
+  ).count();
   if (end_time - start_time > std::chrono::seconds(1)) {
     // Print the number of frames decoded per second
-    fs << "ReceiverDecodedFrames " << receiver_decoded_frames << " frames in "
+    fs << "Decoded " << receiver_decoded_frames << " frames in "
               << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
               << " seconds." << "\n";
     fs.flush();
     receiver_decoded_frames = 0;
     start_time = end_time;
   }
-
-
-  // async( launch::async,
-  //   [&raster]()
-  //   {
-      // if ( raster.initialized() ) {
-        // lock_guard<mutex> lock( mtx );
-        // display_queue.push( raster.get() );
-        // cv.notify_all();
-        // std::cerr << "[receiver] decoded frame " << std::endl;
-      // }
-  //   }
-  // );
+  fs1 << frame_id << " " << ns_since_epoch << "\n";
+  fs1.flush();
 }
 
 int main( int argc, char *argv[] )
@@ -161,9 +212,9 @@ int main( int argc, char *argv[] )
     abort();
   }
 
-  std::ofstream receiver_log_file("receiver_log.txt", std::ios::out);
-  std::ofstream bitrateps("Receiving_bitrate.txt", std::ios::out);
-  std::ofstream framerate("Receiving_fps.txt", std::ios::out);
+  ofstream receiver_log_file("receiver_log.txt", std::ios::out);
+  ofstream bitrateps("receiving_bitrate.txt", std::ios::out);
+  ofstream framerate("receiving_fps.txt", std::ios::out);
   /* fullscreen player */
   // bool fullscreen = false;
   bool verbose = false;
@@ -215,7 +266,7 @@ int main( int argc, char *argv[] )
   player.set_error_concealment( true );
 
   /* construct display thread */
-  // thread( [&player, fullscreen]() { display_task( player.example_raster(), fullscreen ); } ).detach();
+  thread( []() { display_task(); } ).detach();
 
   /* frame no => FragmentedFrame; used when receiving packets out of order */
   unordered_map<size_t, FragmentedFrame> fragmented_frames;
@@ -247,7 +298,7 @@ int main( int argc, char *argv[] )
       bits_per_second += new_fragment.payload.size() * 8;
       auto end_time = std::chrono::steady_clock::now();
       if (end_time - start_time > std::chrono::seconds(1)) {
-        std::cout << "Bits per seoncd " << bits_per_second << endl;
+        // std::cout << "Bits per seoncd " << bits_per_second << endl;
         bitrateps << bits_per_second << "\n";
         bitrateps.flush();
         start_time = end_time;
@@ -260,10 +311,6 @@ int main( int argc, char *argv[] )
       }
       else if ( packet.frame_no() > next_frame_no ) {
 
-        // frame_timestamps[packet.frame_no()].second = std::chrono::steady_clock::now();
-
-        
-  
         /* current frame is not finished yet, but we just received a packet
            for the next frame, so here we just encode the partial frame and
            display it and move on to the next frame */
@@ -273,7 +320,7 @@ int main( int argc, char *argv[] )
         for ( size_t i = next_frame_no; i < packet.frame_no(); i++ ) {
           if ( fragmented_frames.count( i ) == 0 ) continue;
 
-          enqueue_frame( player, fragmented_frames.at( i ).partial_frame(), framerate );
+          enqueue_frame( player, fragmented_frames.at( i ).partial_frame(), i, framerate , receiver_log_file);
           fragmented_frames.erase( i );
         }
 
@@ -334,7 +381,7 @@ int main( int argc, char *argv[] )
         }
 
         // here we apply the frame
-        enqueue_frame( player, fragment.frame(), framerate );
+        enqueue_frame( player, fragment.frame(), next_frame_no, framerate, receiver_log_file);
 
         // state "after" applying the frame
         current_state = player.current_decoder().minihash();
@@ -346,16 +393,7 @@ int main( int argc, char *argv[] )
           complete_states.push_back( current_state );
         }
 
-        fragmented_frames.erase( next_frame_no );
-
-        auto now_new = std::chrono::steady_clock::now();
-        auto ns_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            now_new.time_since_epoch()
-        ).count();
-
-        receiver_log_file << next_frame_no << " " << ns_since_epoch << "\n";
-        receiver_log_file.flush();
-        
+        fragmented_frames.erase( next_frame_no ); 
         next_frame_no++;
       }
 

@@ -40,6 +40,7 @@
 #include <unordered_map>
 #include <iomanip>
 #include <cmath>
+#include <fstream>
 
 #include "exception.hh"
 #include "finally.hh"
@@ -55,12 +56,13 @@
 #include "procinfo.hh"
 #include "raw_video_reader.hh"
 
+
 using namespace std;
 using namespace std::chrono;
 using namespace PollerShortNames;
 // std::map<uint32_t, time_range> frame_timestamps;
 
-
+// unordered_map<unsigned int, RasterHandle> input_map;
 
 class AverageEncodingTime
 {
@@ -201,9 +203,9 @@ int main( int argc, char *argv[] )
   if ( argc < 1 ) { /* for sticklers */
     abort();
   }
-  std::ofstream sender_log_file("sender_log.txt", std::ios::out);
-  std::ofstream bitrateps("Sending_bitrate.txt", std::ios::out);
-  std::ofstream framerate("Sending_fps.txt", std::ios::out);
+  ofstream sender_log_file("sender_log.txt", std::ios::out);
+  ofstream bitrateps("sending_bitrate.txt", std::ios::out);
+  ofstream framerate("sending_fps.txt", std::ios::out);
   /* camera settings */
   string camera_device = "/dev/video0";
   string pixel_format = "NV12";
@@ -369,8 +371,8 @@ int main( int argc, char *argv[] )
           now.time_since_epoch()
       ).count();
 
-      sender_log_file << frame_no << " " << ns_since_epoch << "\n";
-      // sender_log_file.flush();
+      sender_log_file << frame_no << " " << ns_since_epoch << endl;
+      sender_log_file.flush();
 
       /* let's cleanup the stored encoders based on the lastest ack */
       if ( receiver_last_acked_state.initialized() and
@@ -397,7 +399,8 @@ int main( int argc, char *argv[] )
       }
 
       RasterHandle raster = last_raster.get();
-
+      std::shared_ptr<RasterHandle> raster_ptr = std::make_shared<RasterHandle>(raster);
+      // cout << "sending: frame_id " << frame_no << endl;
       uint32_t selected_source_hash = initial_state;
 
       /* reason about the state of the receiver based on ack messages
@@ -623,8 +626,10 @@ int main( int argc, char *argv[] )
         // Print the number of frames encoded per second
         framerate << "Encoded " << encoded_frame_count << " frames in "
                   << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
-                  << " seconds." << "\n";
-        bitrateps << frame_size_average*8 << "\n";
+                  << " seconds." << endl;
+        framerate.flush();
+        bitrateps << frame_size_average*8 << endl;
+        bitrateps.flush();
         frame_size_average = 0.0;
         encoded_frame_count = 0;
         start_time = end_time;
@@ -749,7 +754,9 @@ int main( int argc, char *argv[] )
     const auto poll_result = poller.poll( pacer.ms_until_due() );
     if ( poll_result.result == Poller::Result::Type::Exit ) {
       if ( poll_result.exit_status ) {
-        sender_log_file.flush();
+        // sender_log_file.flush();
+        // bitrateps.flush();
+        // framerate.flush();
         cerr << "Connection error." << endl;
       }
 
